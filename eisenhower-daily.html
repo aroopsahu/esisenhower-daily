@@ -1,0 +1,936 @@
+<title>Eisenhower Daily</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a working desk — date strip and capture bar on top, Jira inbox, the 2×2 matrix drawn on real Urgent/Important axes, automation log underneath. */
+:root{
+  --paper:#EEF1F5; --surface:#FFFFFF; --ink:#16202C; --muted:#5B687A; --line:#D5DCE5; --line-soft:#E4E9EF;
+  --accent:#1F3A8A; --accent-ink:#FFFFFF;
+  --q-do:#C93B22; --q-sch:#2763C4; --q-del:#B57A0B; --q-elim:#717C8C;
+  --ok:#1E8A4C;
+  --shadow:0 1px 2px rgba(22,32,44,.06),0 6px 18px rgba(22,32,44,.06);
+  --f-display:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0D1218; --surface:#151C25; --ink:#E5EAF1; --muted:#8C98A9; --line:#26313F; --line-soft:#1D2631;
+  --accent:#8EA8F2; --accent-ink:#0D1218;
+  --q-do:#F0694F; --q-sch:#6E9DF2; --q-del:#E2A93A; --q-elim:#8F99A8; --ok:#4CC27F;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0D1218; --surface:#151C25; --ink:#E5EAF1; --muted:#8C98A9; --line:#26313F; --line-soft:#1D2631;
+  --accent:#8EA8F2; --accent-ink:#0D1218;
+  --q-do:#F0694F; --q-sch:#6E9DF2; --q-del:#E2A93A; --q-elim:#8F99A8; --ok:#4CC27F;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;margin:0;
+  background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+  background-size:28px 28px;background-attachment:fixed}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:16px}
+
+/* Header */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:-.02em;margin:0;line-height:1.05;text-wrap:balance}
+.brand .day{font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-top:4px}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sync{font-family:var(--f-mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.sync i{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block}
+.sync.on i{background:var(--ok)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:500;font-size:13px}
+.btn:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink);border-color:var(--line)}
+.btn.sm{padding:4px 10px;font-size:12px;border-radius:6px}
+
+/* Date strip */
+.strip{display:flex;align-items:stretch;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:var(--shadow)}
+.strip .nav{border:0;background:transparent;width:32px;border-radius:8px;color:var(--muted);font-size:16px;flex:none}
+.strip .nav:hover{background:var(--paper);color:var(--ink)}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;flex:1;min-width:0}
+.d{border:1px solid transparent;background:transparent;border-radius:8px;padding:6px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.d:hover{background:var(--paper)}
+.d .dw{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.d .dn{font-family:var(--f-display);font-weight:600;font-size:18px;line-height:1.1;font-variant-numeric:tabular-nums}
+.d .dots{display:flex;gap:3px;height:6px;align-items:center}
+.d .dots b{width:5px;height:5px;border-radius:50%;background:var(--muted);opacity:.5}
+.d .dots b.done{background:var(--ok);opacity:1}
+.d.today .dn{color:var(--accent)}
+.d.sel{background:var(--ink);border-color:var(--ink)}
+.d.sel .dw,.d.sel .dn{color:var(--paper)}
+.d.wknd .dw{opacity:.6}
+
+/* Summary */
+.summary{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
+.summary strong{color:var(--ink);font-family:var(--f-mono);font-weight:500;font-variant-numeric:tabular-nums}
+.meter{width:120px;height:6px;border-radius:3px;background:var(--line);overflow:hidden;display:inline-block;vertical-align:middle;margin-left:6px}
+.meter span{display:block;height:100%;background:var(--ok);transition:width .3s}
+.warn{color:var(--q-do);font-weight:500}
+.banner{border:1px dashed var(--q-do);color:var(--ink);background:color-mix(in srgb,var(--q-do) 7%,var(--surface));border-radius:10px;padding:10px 12px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+
+/* Capture bar */
+.capture{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.capture .title{flex:1 1 260px;min-width:0;border:0;background:transparent;font-size:15px;padding:8px 6px;outline:none}
+.capture .title::placeholder{color:var(--muted)}
+.toggle{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+.toggle[aria-pressed="true"]{color:var(--paper);background:var(--ink);border-color:var(--ink)}
+.toggle .k{font-family:var(--f-mono);font-size:10px;opacity:.7}
+.field{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:3px 8px}
+.field input,.field select{border:0;background:transparent;font-size:12px;padding:3px 0;outline:none;max-width:140px}
+.target{font-family:var(--f-mono);font-size:11px;padding:4px 8px;border-radius:6px;color:var(--q);background:color-mix(in srgb,var(--q) 12%,transparent)}
+.hint{width:100%;font-size:11.5px;color:var(--muted);padding:0 6px}
+.hint code{font-family:var(--f-mono);font-size:11px;background:var(--paper);padding:1px 4px;border-radius:4px}
+
+/* Jira inbox */
+.jira{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+.jhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.jhead h3{margin:0;font-family:var(--f-display);font-size:17px;font-weight:700;display:flex;gap:8px;align-items:center}
+.badge{font-family:var(--f-mono);font-size:11px;font-weight:500;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:1px 8px}
+.badge.zero{background:var(--line);color:var(--muted)}
+.jtools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.jmeta{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.jlist{display:flex;flex-direction:column;max-height:320px;overflow:auto}
+.jrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line-soft)}
+.js{min-width:0;display:flex;flex-direction:column;gap:4px}
+.jt{font-size:13.5px;overflow-wrap:anywhere}
+.jc{display:flex;gap:5px;flex-wrap:wrap}
+.jact{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.jact select{border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--paper);font-size:12px}
+.key{font-family:var(--f-mono);font-size:11.5px;color:var(--accent);text-decoration:none;font-weight:500;margin-right:6px}
+a.key:hover{text-decoration:underline}
+.jnote{font-size:12.5px;color:var(--muted);padding:4px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.jnote.err{color:var(--ink);border-left:3px solid var(--q-do);padding-left:10px}
+
+/* Matrix */
+.matrix{display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) minmax(0,1fr);gap:10px}
+.axis-x{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:center;padding-bottom:2px;border-bottom:1px solid var(--line)}
+.axis-y{writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:center;border-left:1px solid var(--line);padding-left:4px}
+.quad{--q:var(--muted);background:color-mix(in srgb,var(--q) 5%,var(--surface));border:1px solid color-mix(in srgb,var(--q) 22%,var(--line));border-top:3px solid var(--q);border-radius:12px;padding:12px;min-height:220px;display:flex;flex-direction:column;gap:10px;min-width:0;transition:background .15s,border-color .15s}
+.quad.over{background:color-mix(in srgb,var(--q) 14%,var(--surface));border-color:var(--q)}
+.quad[data-q="do"]{--q:var(--q-do)} .quad[data-q="schedule"]{--q:var(--q-sch)}
+.quad[data-q="delegate"]{--q:var(--q-del)} .quad[data-q="eliminate"]{--q:var(--q-elim)}
+.qhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.qhead h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:-.01em;color:var(--q)}
+.qhead .verb{font-size:12px;color:var(--muted);margin-top:1px}
+.qcount{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.qmeta-small{display:none;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:6px;flex:1}
+.empty{font-size:12.5px;color:var(--muted);border:1px dashed color-mix(in srgb,var(--q) 30%,var(--line));border-radius:8px;padding:14px;text-align:center;margin-top:auto;margin-bottom:auto}
+.qadd{display:flex;gap:6px;border-top:1px solid color-mix(in srgb,var(--q) 18%,var(--line));padding-top:8px}
+.qadd input{flex:1;min-width:0;border:0;background:transparent;font-size:13px;padding:5px 2px;outline:none}
+.qadd input::placeholder{color:var(--muted)}
+
+/* Task card */
+.task{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 8px 8px 10px;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 1px rgba(0,0,0,.03)}
+.task[draggable="true"]{cursor:grab}
+.task.dragging{opacity:.4}
+.task .row{display:flex;gap:9px;align-items:flex-start}
+.chk{flex:none;width:18px;height:18px;border-radius:5px;border:1.5px solid var(--q);background:transparent;margin-top:1px;display:grid;place-items:center;padding:0}
+.chk svg{width:12px;height:12px;opacity:0;stroke:var(--surface)}
+.task.done .chk{background:var(--q)}
+.task.done .chk svg{opacity:1}
+.ttl{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13.5px;cursor:text}
+.task.done .ttl{text-decoration:line-through;color:var(--muted)}
+.ttl-edit{flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:13.5px;background:var(--paper)}
+.more{flex:none;border:0;background:transparent;color:var(--muted);border-radius:6px;width:24px;height:22px;font-size:15px;line-height:1}
+.more:hover{background:var(--paper);color:var(--ink)}
+.chips{display:flex;gap:5px;flex-wrap:wrap;padding-left:27px}
+.chip{font-family:var(--f-mono);font-size:10.5px;padding:1px 6px;border-radius:4px;background:var(--paper);color:var(--muted);white-space:nowrap;text-decoration:none}
+.chip.carry{color:var(--q-do);background:color-mix(in srgb,var(--q-do) 10%,transparent)}
+.chip.due{color:var(--ink)}
+.chip.due.late{color:var(--q-do)}
+.chip.auto,.chip.jira{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+a.chip.jira:hover{text-decoration:underline}
+.actions{display:flex;flex-wrap:wrap;gap:5px;padding-left:27px;border-top:1px dashed var(--line);padding-top:7px}
+.actions button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:3px 8px;font-size:11.5px}
+.actions button:hover{border-color:var(--muted)}
+.actions .mv{--q:var(--muted);color:var(--q)}
+.actions .mv[data-q="do"]{--q:var(--q-do)} .actions .mv[data-q="schedule"]{--q:var(--q-sch)}
+.actions .mv[data-q="delegate"]{--q:var(--q-del)} .actions .mv[data-q="eliminate"]{--q:var(--q-elim)}
+.actions .del{color:var(--q-do)}
+
+/* Log */
+details.log{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+details.log summary{cursor:pointer;font-weight:600;font-size:13px;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details.log summary::-webkit-details-marker{display:none}
+details.log summary span{font-family:var(--f-mono);font-weight:400;font-size:11px;color:var(--muted)}
+.log ol{list-style:none;margin:10px 0 2px;padding:0;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
+.log li{display:grid;grid-template-columns:88px minmax(0,1fr);gap:10px;font-size:12.5px}
+.log li time{font-family:var(--f-mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Settings drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,14,20,.38);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--surface);border-left:1px solid var(--line);z-index:41;display:flex;flex-direction:column;
+  padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-left:18px;gap:14px;overflow:auto;box-shadow:-10px 0 30px rgba(0,0,0,.12)}
+.drawer h3{margin:0;font-family:var(--f-display);font-size:20px}
+.dhead{display:flex;justify-content:space-between;align-items:center}
+.sec{display:flex;flex-direction:column;gap:2px}
+.sec h4{margin:8px 0 4px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.set{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
+.set label,.stack label{display:flex;flex-direction:column;gap:2px;min-width:0}
+.set label b,.stack label b{font-weight:500;font-size:13.5px}
+.set label small,.stack label small,.stack small{color:var(--muted);font-size:12px}
+.set input[type=number]{width:64px;border:1px solid var(--line);border-radius:6px;padding:5px 6px;background:var(--paper);font-family:var(--f-mono);text-align:right}
+.stack{display:flex;flex-direction:column;gap:6px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
+.stack input,.stack textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--paper);font-size:13px}
+.stack textarea{min-height:60px;resize:vertical;font-family:var(--f-mono);font-size:12px}
+.stack .row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stack a{color:var(--accent)}
+.sw{position:relative;width:38px;height:22px;flex:none}
+.sw input{opacity:0;position:absolute;inset:0;margin:0;cursor:pointer}
+.sw span{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:background .15s;pointer-events:none}
+.sw span::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw input:checked+span{background:var(--accent)}
+.sw input:checked+span::after{transform:translateX(16px)}
+.sw input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.rec{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
+.rec span{min-width:0;overflow-wrap:anywhere}
+.rec small{font-family:var(--f-mono);color:var(--muted);font-size:11px}
+.danger{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.confirm-row{font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:9px 14px;border-radius:8px;font-size:13px;z-index:60;display:flex;gap:12px;align-items:center;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+.toast button{background:transparent;border:0;color:var(--paper);text-decoration:underline;font-weight:600;padding:0}
+
+@media (max-width:760px){
+  .matrix{grid-template-columns:minmax(0,1fr);grid-template-rows:none}
+  .axis-x,.axis-y,.corner{display:none}
+  .qmeta-small{display:block}
+  .quad{min-height:0}
+  .brand h1{font-size:24px}
+  .d .dn{font-size:16px}
+}
+@media (max-width:560px){.jrow{grid-template-columns:minmax(0,1fr)}.jact{justify-content:flex-start}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Eisenhower Daily</h1>
+      <div class="day" id="dayLabel">Loading your matrix…</div>
+    </div>
+    <div class="top-actions">
+      <span class="sync" id="sync"><i></i><span>Saved in this browser</span></span>
+      <button class="btn" id="todayBtn" type="button">Today</button>
+      <button class="btn" id="settingsBtn" type="button">Rules &amp; settings</button>
+    </div>
+  </header>
+
+  <nav class="strip" aria-label="Choose a day">
+    <button class="nav" id="prevWk" type="button" aria-label="Previous week">‹</button>
+    <div class="days" id="days"></div>
+    <button class="nav" id="nextWk" type="button" aria-label="Next week">›</button>
+  </nav>
+
+  <div class="summary" id="summary"></div>
+  <div id="bannerSlot"></div>
+
+  <form class="capture" id="capture" autocomplete="off">
+    <input class="title" id="newTitle" type="text" placeholder="Add a task for this day…" aria-label="Task title">
+    <button class="toggle" type="button" id="tUrgent" aria-pressed="false">Urgent <span class="k">Alt+U</span></button>
+    <button class="toggle" type="button" id="tImportant" aria-pressed="true">Important <span class="k">Alt+I</span></button>
+    <span class="target" id="targetLbl"></span>
+    <label class="field">Due <input type="date" id="newDue"></label>
+    <label class="field">Repeat
+      <select id="newRepeat">
+        <option value="">Never</option><option value="daily">Daily</option><option value="weekdays">Weekdays</option><option value="weekly">Weekly</option>
+      </select>
+    </label>
+    <button class="btn primary" type="submit" id="addBtn">Add</button>
+    <div class="hint">Tip: write <code>@Name</code> to record who it's delegated to, e.g. <code>Collect bank statements @Ravi</code>. Drag cards between boxes to reprioritise.</div>
+  </form>
+
+  <section class="jira" id="jira" aria-label="Jira inbox"></section>
+
+  <section class="matrix" id="matrix" aria-label="Eisenhower matrix">
+    <div class="corner"></div>
+    <div class="axis-x">Urgent</div>
+    <div class="axis-x">Not urgent</div>
+    <div class="axis-y">Important</div>
+    <div class="quad" data-q="do"></div>
+    <div class="quad" data-q="schedule"></div>
+    <div class="axis-y">Not important</div>
+    <div class="quad" data-q="delegate"></div>
+    <div class="quad" data-q="eliminate"></div>
+  </section>
+
+  <details class="log" id="logBox">
+    <summary>What the automation did <span id="logCount"></span></summary>
+    <ol id="logList"></ol>
+  </details>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="Rules and settings">
+  <div class="dhead"><h3>Rules &amp; settings</h3><button class="btn ghost" id="closeDrawer" type="button">Close</button></div>
+  <div id="settingsBody"></div>
+</aside>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const Q = {
+  do:{name:"Do",verb:"Urgent and important. Finish today.",small:"Urgent · Important",empty:"Nothing on fire. Keep it that way."},
+  schedule:{name:"Schedule",verb:"Important, not urgent. Protect time for it.",small:"Not urgent · Important",empty:"Plan the deep work that moves things forward."},
+  delegate:{name:"Delegate",verb:"Urgent, not important. Hand it off.",small:"Urgent · Not important",empty:"Hand-offs go here. Add @Name to track the owner."},
+  eliminate:{name:"Eliminate",verb:"Neither. Drop it or batch it.",small:"Not urgent · Not important",empty:"Low-value items land here and get dropped automatically."}
+};
+const ORDER=["do","schedule","delegate","eliminate"];
+const DEFAULTS={autoCarry:true,dayStartHour:0,skipWeekends:false,escalateAfter:2,autoUrgent:true,dueSoonDays:1,dropAfter:3,doLimit:5,purgeDoneDays:14,defaultUrgent:false,defaultImportant:true};
+const JDEF={site:"",jql:"",finished:"Done, Deployed on Prod, Deployed to Prod, Deployed in Prod, Released, Closed, Resolved, Cancelled, Won't Do",hide:"",autoAdd:false,autoClose:true,open:true,ignored:{},added:{},cache:[],lastSync:0,siteUrl:""};
+const DEFAULT_JQL="assignee = currentUser() AND statusCategory != Done ORDER BY priority DESC, updated DESC";
+const LS_KEY="eisenhower-daily-v1";
+const $=id=>document.getElementById(id);
+
+let state=blank();
+let view=null, weekAnchor=null, openActions=null, editing=null;
+let draft={urgent:false,important:true};
+let mode="browser";       // "claude" (synced to account) | "local" (launcher on your computer) | "browser"
+let remote=null;          // claude db ref
+let lastToday=null;
+let localJira={site:"",email:"",hasToken:false};
+let jira={busy:false,err:null,allow:false,live:false};
+
+function blank(){return {v:2,tasks:{},recurring:{},log:[],settings:{...DEFAULTS},jira:JSON.parse(JSON.stringify(JDEF)),lastRun:null,updatedAt:0}}
+function hasData(s){return Object.keys(s.tasks).length||Object.keys(s.recurring).length}
+
+/* ---------- dates ---------- */
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return ymd(d)};
+const diff=(a,b)=>Math.round((parse(b)-parse(a))/864e5);
+const dow=s=>parse(s).getDay();
+const isWknd=s=>{const w=dow(s);return w===0||w===6};
+function logicalToday(){const d=new Date();d.setHours(d.getHours()-(+state.settings.dayStartHour||0));return ymd(d)}
+function nextWork(s){let t=s;while(isWknd(t))t=addDays(t,1);return t}
+const WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const short=s=>{const d=parse(s);return d.getDate()+" "+MO[d.getMonth()]};
+const long=s=>{const d=parse(s);return ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getDay()]+", "+d.getDate()+" "+MO[d.getMonth()]+" "+d.getFullYear()};
+const hm=ms=>{const d=new Date(ms);return pad(d.getHours())+":"+pad(d.getMinutes())};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const qFrom=(u,i)=>i?(u?"do":"schedule"):(u?"delegate":"eliminate");
+const isDate=s=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s);
+
+/* ---------- persistence ---------- */
+// Data loaded from storage can arrive read-only (frozen). Always work on a fresh, editable copy.
+function normalize(s){
+  let c;try{c=JSON.parse(JSON.stringify(s||{}))}catch(e){c={}}
+  const b=blank();
+  const out={...b,...c,settings:{...DEFAULTS,...(c.settings||{})},tasks:c.tasks&&typeof c.tasks==="object"?c.tasks:{},recurring:c.recurring&&typeof c.recurring==="object"?c.recurring:{},log:Array.isArray(c.log)?c.log:[]};
+  out.jira={...b.jira,...(c.jira||{})};
+  ["ignored","added"].forEach(k=>{if(!out.jira[k]||typeof out.jira[k]!=="object"||Array.isArray(out.jira[k]))out.jira[k]={}});
+  if(!Array.isArray(out.jira.cache))out.jira.cache=[];
+  Object.values(out.tasks).forEach(t=>{if(!t||typeof t!=="object"||!t.id)return;if(!ORDER.includes(t.q))t.q="schedule";if(!isDate(t.date))t.date=logicalTodayFor(out)});
+  return out;
+}
+function logicalTodayFor(s){const d=new Date();d.setHours(d.getHours()-(+((s.settings||{}).dayStartHour)||0));return ymd(d)}
+function loadLocal(){try{const r=localStorage.getItem(LS_KEY);if(r)return normalize(JSON.parse(r))}catch(e){}return null}
+function writeLS(){try{localStorage.setItem(LS_KEY,JSON.stringify(state))}catch(e){}}
+let saveTimer=null,writing=false,writeAgain=false;
+function save(){
+  state.updatedAt=Date.now();
+  writeLS();
+  if(mode==="browser")return;
+  clearTimeout(saveTimer);saveTimer=setTimeout(flush,400);
+}
+async function flush(){
+  if(mode==="browser")return;
+  if(writing){writeAgain=true;return}
+  writing=true;
+  const body=JSON.parse(JSON.stringify(state));
+  try{
+    if(mode==="local"){
+      const r=await fetch("/api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      if(!r.ok)throw {code:"unavailable"};
+    }else{
+      await remote.ref.set(body);
+    }
+    setSync();
+  }catch(e){
+    const code=e&&e.code;
+    if(mode==="claude"&&(code==="invalid_argument"||code==="revoked"||code==="not_granted"||code==="capability_disabled")){mode="browser";remote=null;setSync();toast("Couldn't save to your account. Your tasks are kept in this browser.")}
+    else if(code==="quota_exceeded"){toast("Storage is full. Lower “Delete finished tasks after” in settings.")}
+    else{setSync("Not saved yet, retrying…");setTimeout(flush,1500+Math.random()*1000)}
+  }
+  writing=false;
+  if(writeAgain){writeAgain=false;flush()}
+}
+function setSync(override){
+  const el=$("sync");
+  const label=override||(mode==="claude"?"Synced to your account":mode==="local"?"Saved to planner-data.json":"Saved in this browser");
+  el.classList.toggle("on",!override&&mode!=="browser");el.lastElementChild.textContent=label;
+}
+function adopt(incoming){
+  const r=incoming&&typeof incoming==="object"&&incoming.updatedAt?normalize(incoming):null;
+  if(r&&(r.updatedAt>=(state.updatedAt||0)||!hasData(state))){state=r;writeLS()}
+  else if(hasData(state)){save()}
+}
+const inClaude=()=>mode!=="local"&&!!(window.claude&&typeof window.claude.use==="function");
+
+async function detectLocal(){
+  if(!/^https?:$/.test(location.protocol)||!/^(localhost|127\.0\.0\.1)$/.test(location.hostname))return false;
+  try{
+    const r=await fetch("/api/state",{cache:"no-store"});if(!r.ok)return false;
+    const j=await r.json();mode="local";adopt(j);setSync();
+    try{localJira=await (await fetch("/api/jira/config",{cache:"no-store"})).json()}catch(e){}
+    return true;
+  }catch(e){return false}
+}
+async function connectClaude(){
+  const c=window.claude;if(!c||typeof c.use!=="function")return;
+  try{
+    const [db,user]=await Promise.all([c.use("db"),c.use("user")]);
+    if(!db||!user)return;
+    const id=await user.id();if(!id)return;
+    const ref=db.doc("data/users/"+id+"/planner");
+    const snap=await ref.get();
+    remote={ref};mode="claude";
+    adopt(snap.exists?snap.data():null);
+    setSync();
+    if(runAutomation())save();
+    render();
+    ref.onSnapshot(s=>{
+      if(!s.exists||s.metadata.hasPendingWrites||writing)return;
+      const r=s.data();if(!r||(r.updatedAt||0)<=(state.updatedAt||0))return;
+      state=normalize(r);writeLS();render();
+    },()=>{});
+  }catch(e){/* stay in this browser */}
+}
+
+/* ---------- automation ---------- */
+function log(text,day){state.log.unshift({at:Date.now(),day:day||logicalToday(),text});if(state.log.length>60)state.log.length=60}
+function openTasks(){return Object.values(state.tasks).filter(t=>t&&!t.done&&!t.archived)}
+
+function runAutomation(){
+  const S=state.settings,today=logicalToday();
+  let changed=false;
+  const target=S.skipWeekends?nextWork(today):today;
+  if(S.autoCarry){
+    const late=openTasks().filter(t=>t.date<today);
+    if(late.length){
+      const from=new Set();
+      late.forEach(t=>{from.add(t.date);(t.trail=t.trail||[]).push(t.date);t.date=target;t.carried=(t.carried||0)+1;});
+      log("Carried "+late.length+" unfinished task"+(late.length>1?"s":"")+" to "+(target===today?"today":short(target))+" (from "+[...from].sort().map(short).join(", ")+")",today);
+      changed=true;
+    }
+  }
+  openTasks().filter(t=>t.date<=target).forEach(t=>{
+    if(t.pinned)return;
+    if(S.autoUrgent&&t.due&&diff(today,t.due)<=(+S.dueSoonDays)){
+      const when=t.due<=today?"now":short(t.due);
+      if(t.q==="schedule"){t.q="do";t.auto="due";log("“"+t.title+"” is due "+when+", moved to Do");changed=true}
+      else if(t.q==="eliminate"){t.q="delegate";t.auto="due";log("“"+t.title+"” is due "+when+", moved to Delegate");changed=true}
+    }
+    if(+S.escalateAfter>0&&t.q==="schedule"&&(t.carried||0)>=+S.escalateAfter){
+      t.q="do";t.auto="escalated";log("“"+t.title+"” slipped "+t.carried+" days, escalated to Do");changed=true;
+    }
+  });
+  if(+S.dropAfter>0){
+    openTasks().forEach(t=>{if(t.q==="eliminate"&&!t.pinned&&(t.carried||0)>=+S.dropAfter){t.archived=true;t.archivedAt=Date.now();log("Dropped “"+t.title+"” after "+t.carried+" days in Eliminate");changed=true}});
+  }
+  if(!(S.skipWeekends&&isWknd(today))){
+    Object.values(state.recurring).forEach(r=>{
+      if(!r||r.start>today)return;
+      const w=dow(today);
+      const hit=r.rule==="daily"||(r.rule==="weekdays"&&w>0&&w<6)||(r.rule==="weekly"&&w===r.dow);
+      if(!hit)return;
+      const exists=Object.values(state.tasks).some(t=>t.recurId===r.id&&(t.date===today||(!t.done&&!t.archived)));
+      if(exists)return;
+      const id=uid();
+      state.tasks[id]={id,title:r.title,q:r.q,date:today,done:false,created:Date.now(),carried:0,recurId:r.id,delegateTo:r.delegateTo||""};
+      log("Added repeating task “"+r.title+"”");changed=true;
+    });
+  }
+  const keep=(+S.purgeDoneDays||0)*864e5;
+  if(keep>0){
+    let n=0;Object.values(state.tasks).forEach(t=>{const at=t.done?t.doneAt:t.archived?t.archivedAt:0;if(at&&Date.now()-at>keep){delete state.tasks[t.id];n++}});
+    if(n){log("Cleared "+n+" finished task"+(n>1?"s":"")+" older than "+S.purgeDoneDays+" days");changed=true}
+  }
+  if(state.lastRun!==today){state.lastRun=today;changed=true}
+  return changed;
+}
+
+/* ---------- task actions ---------- */
+function parseTitle(raw){
+  let title=raw.trim(),who="";
+  const m=title.match(/(?:^|\s)@([\p{L}\p{N}._-]+)/u);
+  if(m){who=m[1];title=title.replace(m[0],"").trim()}
+  return {title,who};
+}
+function workDay(){const t=logicalToday();return view&&view>t?view:t}
+function addTask(raw,q,opts){
+  const {title,who}=parseTitle(raw);if(!title)return false;
+  const date=view,repeat=opts&&opts.repeat,due=(opts&&opts.due)||"";
+  const id=uid();
+  let recurId;
+  if(repeat){recurId=uid();state.recurring[recurId]={id:recurId,title,q,rule:repeat,dow:dow(date),start:date,delegateTo:who}}
+  state.tasks[id]={id,title,q,date,done:false,created:Date.now(),carried:0,due,delegateTo:who,recurId:recurId||null};
+  runAutomation();save();render();
+  return true;
+}
+function setQ(id,q){const t=state.tasks[id];if(!t||t.q===q)return;t.q=q;t.pinned=true;delete t.auto;save();render()}
+function toggleDone(id){const t=state.tasks[id];if(!t)return;t.done=!t.done;t.doneAt=t.done?Date.now():null;if(t.done)t.doneOn=view;save();render()}
+function tomorrow(id){const t=state.tasks[id];if(!t)return;const base=t.date>logicalToday()?t.date:logicalToday();let d=addDays(base,1);if(state.settings.skipWeekends)d=nextWork(d);t.date=d;openActions=null;save();render();toast("Moved to "+short(d))}
+function remove(id){
+  const t=state.tasks[id];if(!t)return;const copy=JSON.parse(JSON.stringify(t));
+  delete state.tasks[id];openActions=null;save();render();
+  toast("Deleted “"+t.title+"”"+(t.jira?". "+t.jira.key+" won't come back from Jira":""),()=>{state.tasks[copy.id]=copy;save();render()});
+}
+function rename(id,val){const t=state.tasks[id];editing=null;if(t&&val.trim()){const p=parseTitle(val);t.title=p.title||t.title;if(p.who)t.delegateTo=p.who}save();render()}
+
+/* ---------- Jira ---------- */
+function finishedSet(){return new Set(String(state.jira.finished||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean))}
+function isFinished(t,fin){return t.cat==="done"||fin.has(String(t.status||"").toLowerCase())}
+function hidePatterns(){return String(state.jira.hide||"").split(/[\s,;]+/).map(s=>s.trim().toUpperCase()).filter(Boolean)}
+function isHidden(key,pats){key=key.toUpperCase();return pats.some(p=>p.endsWith("*")?key.startsWith(p.slice(0,-1)):key===p)}
+function inbox(){
+  const J=state.jira,fin=finishedSet(),pats=hidePatterns();
+  return J.cache.filter(t=>t&&t.key&&!isFinished(t,fin)&&!J.ignored[t.key]&&!J.added[t.key]&&!isHidden(t.key,pats));
+}
+function suggestQ(t){
+  const p=String(t.priority||"").toLowerCase();
+  const notImportant=/\b(low|lowest|trivial|minor)\b|\bp[34]\b/.test(p);
+  const hot=/\b(highest|blocker|critical|urgent)\b|\bp[01]\b/.test(p);
+  const dueSoon=isDate(t.due)&&diff(logicalToday(),t.due)<=(+state.settings.dueSoonDays);
+  return qFrom(hot||dueSoon,!notImportant);
+}
+function addFromJira(t,q){
+  const id=uid();
+  state.tasks[id]={id,title:t.summary,q,date:workDay(),done:false,created:Date.now(),carried:0,due:isDate(t.due)?t.due:"",delegateTo:"",recurId:null,
+    jira:{key:t.key,url:t.url||"",status:t.status||"",priority:t.priority||""}};
+  state.jira.added[t.key]={id,at:Date.now()};
+  return id;
+}
+function siteHost(){return String(state.jira.site||"").trim().replace(/^https?:\/\//,"").replace(/\/.*$/,"")}
+function extractIssues(p){
+  if(typeof p==="string"){try{p=JSON.parse(p)}catch(e){return {issues:[],complete:false}}}
+  const arr=Array.isArray(p)?p:(p&&(p.issues||(p.data&&p.data.issues)||p.nodes||p.values))||[];
+  const complete=!(p&&!Array.isArray(p)&&p.nextPageToken&&p.isLast!==true);
+  return {issues:Array.isArray(arr)?arr:[],complete};
+}
+function toTicket(i,siteUrl){
+  if(!i||typeof i!=="object")return null;
+  const f=i.fields||i,st=f.status||{},pr=f.priority||{};
+  const key=i.key||f.key;if(!key)return null;
+  const base=String(siteUrl||"").replace(/\/$/,"");
+  return {key:String(key),summary:String(f.summary||key),status:typeof st==="string"?st:(st.name||""),
+    cat:(st&&st.statusCategory&&st.statusCategory.key)||"",priority:typeof pr==="string"?pr:(pr&&pr.name)||"",
+    due:f.duedate||f.dueDate||"",type:(f.issuetype&&f.issuetype.name)||"",url:base?base+"/browse/"+key:""};
+}
+async function fetchTickets(){
+  const jql=(state.jira.jql||"").trim()||DEFAULT_JQL;
+  if(mode==="local"){
+    const r=await fetch("/api/jira/search?jql="+encodeURIComponent(jql),{cache:"no-store"});
+    let j={};try{j=await r.json()}catch(e){}
+    if(!r.ok)throw {code:"local_"+(j.code||"error"),message:j.error||("The launcher returned "+r.status)};
+    return {issues:j.issues||[],complete:j.complete!==false,siteUrl:j.siteUrl||""};
+  }
+  const mcp=await window.claude.use("mcp");
+  if(!mcp)throw {code:"no_mcp"};
+  let cloudId=siteHost(),siteUrl=cloudId?"https://"+cloudId:"";
+  if(!cloudId){
+    const res=await mcp.callTool("Atlassian","getAccessibleAtlassianResources",{});
+    let list=res.payload;if(typeof list==="string"){try{list=JSON.parse(list)}catch(e){}}
+    if(!Array.isArray(list)||!list.length||!list[0].id)throw {code:"no_site"};
+    cloudId=list[0].id;siteUrl=list[0].url||"";
+  }
+  const res=await mcp.callTool("Atlassian","searchJiraIssuesUsingJql",
+    {cloudId,jql,fields:["summary","status","priority","duedate","issuetype","project"],maxResults:100,responseContentFormat:"markdown"},{cache:false});
+  const p=extractIssues(res.payload);
+  return {issues:p.issues,complete:p.complete,siteUrl};
+}
+function jiraMessage(e){
+  const code=e&&e.code||"",msg=String(e&&e.message||"");
+  switch(code){
+    case "server_not_connected":return {text:"Add the Atlassian connector in claude.ai Settings → Connectors, then press Sync."};
+    case "needs_reauth":return {text:"Your Atlassian connection has expired. Reconnect it in claude.ai Settings → Connectors, then press Sync."};
+    case "selection_required":return {text:"Choose which Atlassian connection to use in the prompt Claude shows, then press Sync."};
+    case "approval_required":case "not_in_manifest":case "consent_required":return {text:"This page needs your permission to read Jira.",allow:true};
+    case "blocked_by_policy":return {text:"Your organization's policy blocks Jira access from this page."};
+    case "no_site":return {text:"No Jira site was found for your Atlassian connection. Enter your site in Rules & settings → Jira."};
+    case "no_mcp":case "not_granted":case "capability_disabled":return {text:"Jira isn't available in this view. Open the planner in Claude, or use the local launcher."};
+    case "tool_error":
+      if(/not installed/i.test(msg))return {text:"Claude's Atlassian connection isn't installed on this Jira site, so Jira refused the request. Ask your Jira admin to allow the Atlassian app for Claude, set the right site in Rules & settings → Jira, or use the local launcher with an API token."};
+      return {text:"Jira refused the search: "+msg.slice(0,220)};
+    case "local_no_config":return {text:"Add your Jira site, email and API token in Rules & settings → Jira."};
+    case "local_auth":return {text:"Jira rejected the email or API token. Check them in Rules & settings → Jira."};
+    case "local_network":return {text:msg||"The launcher couldn't reach Jira. Check your internet or VPN."};
+    default:
+      if(code.startsWith("local_"))return {text:msg||"The launcher couldn't read Jira."};
+      return {text:"Couldn't reach Jira just now. Press Sync to try again."};
+  }
+}
+async function syncJira(){
+  if(jira.busy||!(mode==="local"||inClaude()))return;
+  jira.busy=true;jira.err=null;jira.allow=false;renderJira();
+  try{
+    const r=await fetchTickets();
+    const tickets=r.issues.map(i=>toTicket(i,r.siteUrl)).filter(Boolean);
+    const J=state.jira;J.cache=tickets;J.lastSync=Date.now();if(r.siteUrl)J.siteUrl=r.siteUrl;
+    applyJira(tickets,r.complete);
+    jira.live=true;save();
+  }catch(e){const m=jiraMessage(e);jira.err=m.text;jira.allow=!!m.allow;}
+  jira.busy=false;render();
+}
+function applyJira(tickets,complete){
+  const J=state.jira,today=logicalToday(),byKey={},fin=finishedSet();
+  tickets.forEach(t=>{byKey[t.key]=t});
+  Object.values(state.tasks).forEach(task=>{
+    if(!task||!task.jira)return;
+    const t=byKey[task.jira.key];
+    if(t){
+      task.jira.status=t.status;task.jira.priority=t.priority;if(t.url)task.jira.url=t.url;
+      if(isDate(t.due)&&task.due!==t.due)task.due=t.due;
+      if(t.summary&&t.summary!==task.title&&!task.renamed)task.title=t.summary;
+      if(J.autoClose&&!task.done&&!task.archived&&isFinished(t,fin)){task.done=true;task.doneAt=Date.now();task.doneOn=today;log(task.jira.key+" is “"+t.status+"” in Jira, marked done")}
+    }else if(J.autoClose&&complete&&!task.done&&!task.archived){
+      task.done=true;task.doneAt=Date.now();task.doneOn=today;task.jira.status="Closed or reassigned";
+      log(task.jira.key+" is no longer open and assigned to you in Jira, marked done");
+    }
+  });
+  if(J.autoAdd){
+    const fresh=inbox();fresh.forEach(t=>addFromJira(t,suggestQ(t)));
+    if(fresh.length)log("Added "+fresh.length+" new Jira ticket"+(fresh.length>1?"s":"")+" to the matrix");
+  }
+  runAutomation();
+}
+async function initClaudeJira(){
+  if(!inClaude())return;
+  let st="prompt";
+  try{const perms=await window.claude.use("permissions");if(perms)st=await perms.state("mcp:Atlassian").catch(()=>"prompt")}catch(e){}
+  if(st==="granted"){syncJira()}
+  else if(st==="denied"){jira.err="Jira access is turned off for this page. Turn it on from the page's Permissions menu.";renderJira()}
+  else if(st==="unavailable"){jira.err="Jira isn't available in this view.";renderJira()}
+  else{jira.allow=true;renderJira()}
+}
+
+/* ---------- render ---------- */
+function render(){
+  const today=logicalToday();
+  if(!view)view=today;if(!weekAnchor)weekAnchor=view;
+  $("dayLabel").textContent=(view===today?"Today · ":view<today?"Past · ":"Planned · ")+long(view);
+  renderStrip(today);renderSummary(today);renderJira();renderMatrix(today);renderLog();renderTarget();
+  $("newTitle").placeholder=view===today?"Add a task for today…":"Add a task for "+short(view)+"…";
+}
+function renderStrip(today){
+  const a=parse(weekAnchor);const mon=addDays(weekAnchor,-((a.getDay()+6)%7));
+  let h="";
+  for(let i=0;i<7;i++){
+    const d=addDays(mon,i);
+    const ts=Object.values(state.tasks).filter(t=>t&&t.date===d&&!t.archived);
+    const done=ts.filter(t=>t.done).length,open=ts.length-done;
+    let dots="";const nd=Math.min(done,4);for(let k=0;k<nd;k++)dots+='<b class="done"></b>';for(let k=0;k<Math.min(open,4-nd);k++)dots+="<b></b>";
+    h+=`<button type="button" class="d${d===today?" today":""}${d===view?" sel":""}${isWknd(d)?" wknd":""}" data-day="${d}" aria-label="${long(d)}, ${open} open, ${done} done"${d===view?' aria-current="date"':""}><span class="dw">${WD[dow(d)]}</span><span class="dn">${parse(d).getDate()}</span><span class="dots">${dots}</span></button>`;
+  }
+  $("days").innerHTML=h;
+}
+function dayTasks(){return Object.values(state.tasks).filter(t=>t&&t.date===view&&!t.archived)}
+function renderSummary(today){
+  const ts=dayTasks(),done=ts.filter(t=>t.done).length,total=ts.length;
+  const carried=ts.filter(t=>(t.carried||0)>0&&!t.done).length;
+  const doOpen=ts.filter(t=>t.q==="do"&&!t.done).length,lim=+state.settings.doLimit||0;
+  const pct=total?Math.round(done/total*100):0;
+  const movedOut=view<today?Object.values(state.tasks).filter(t=>(t.trail||[]).includes(view)).length:0;
+  let h=`<span><strong>${done}</strong> of <strong>${total}</strong> done<span class="meter" aria-hidden="true"><span style="width:${pct}%"></span></span></span>`;
+  if(carried)h+=`<span><strong>${carried}</strong> carried over</span>`;
+  if(movedOut)h+=`<span><strong>${movedOut}</strong> moved forward from this day</span>`;
+  if(lim)h+=`<span class="${doOpen>lim?"warn":""}">Do box <strong>${doOpen}</strong>/${lim}${doOpen>lim?" · over your limit, move something to Schedule or Delegate":""}</span>`;
+  $("summary").innerHTML=h;
+  const slot=$("bannerSlot");
+  if(!state.settings.autoCarry&&view===today){
+    const late=openTasks().filter(t=>t.date<today);
+    slot.innerHTML=late.length?`<div class="banner"><span><strong>${late.length}</strong> unfinished task${late.length>1?"s":""} from earlier days. Automatic carry-over is off.</span><button class="btn" type="button" id="pullLate">Bring them to today</button></div>`:"";
+  }else slot.innerHTML="";
+}
+function qOptions(sel){return ORDER.map(q=>`<option value="${q}"${q===sel?" selected":""}>${Q[q].name}</option>`).join("")}
+function renderJira(){
+  const el=$("jira"),J=state.jira;
+  if(!(mode==="local"||inClaude())){
+    el.innerHTML=`<div class="jhead"><h3>Jira inbox</h3></div><div class="jnote">Your Jira tickets appear here when the planner is open in Claude or started with the local launcher.</div>`;
+    return;
+  }
+  const list=inbox();
+  const meta=jira.busy?"Syncing…":J.lastSync?"Synced "+(ymd(new Date(J.lastSync))===ymd(new Date())?hm(J.lastSync):short(ymd(new Date(J.lastSync)))+" "+hm(J.lastSync)):"Not synced yet";
+  let body="";
+  if(jira.err)body+=`<div class="jnote err"><span>${esc(jira.err)}</span>${jira.allow?'<button class="btn sm primary" type="button" data-j="sync">Allow and connect Jira</button>':""}</div>`;
+  else if(jira.allow&&!J.lastSync)body+=`<div class="jnote"><span>Show your open Jira tickets here. Claude asks once for permission to read Jira.</span><button class="btn sm primary" type="button" data-j="sync">Connect Jira</button></div>`;
+  if(J.open){
+    if(list.length){
+      body+=`<div class="jlist">${list.map(t=>{
+        const sq=suggestQ(t),late=isDate(t.due)&&t.due<logicalToday();
+        return `<div class="jrow" data-key="${esc(t.key)}"><div class="js"><div class="jt">${t.url?`<a class="key" href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.key)}</a>`:`<span class="key">${esc(t.key)}</span>`}${esc(t.summary)}</div>
+          <div class="jc"><span class="chip">${esc(t.status||"No status")}</span>${t.priority?`<span class="chip">${esc(t.priority)}</span>`:""}${isDate(t.due)?`<span class="chip due${late?" late":""}">Due ${short(t.due)}</span>`:""}${t.type?`<span class="chip">${esc(t.type)}</span>`:""}</div></div>
+          <div class="jact"><select id="jq-${esc(t.key)}" aria-label="Box for ${esc(t.key)}">${qOptions(sq)}</select><button class="btn sm primary" type="button" data-j="add">Add</button><button class="btn sm ghost" type="button" data-j="ignore">Ignore</button></div></div>`}).join("")}</div>`;
+    }else if(J.lastSync&&!jira.err){
+      const inM=Object.keys(J.added).length,ig=Object.keys(J.ignored).length;
+      body+=`<div class="jnote">No new tickets. ${inM} in your matrix, ${ig} ignored.</div>`;
+    }
+  }
+  el.innerHTML=`<div class="jhead"><h3>Jira inbox <span class="badge${list.length?"":" zero"}">${list.length}</span></h3>
+    <div class="jtools"><span class="jmeta">${meta}</span>${list.length>1&&J.open?'<button class="btn sm" type="button" data-j="addall">Add all</button>':""}
+    <button class="btn sm" type="button" data-j="sync"${jira.busy?" disabled":""}>Sync</button>
+    <button class="btn sm ghost" type="button" data-j="fold" aria-expanded="${!!J.open}">${J.open?"Hide":"Show"}</button></div></div>${body}`;
+}
+function renderMatrix(today){
+  const ts=dayTasks();
+  ORDER.forEach(q=>{
+    const el=document.querySelector(`.quad[data-q="${q}"]`);
+    const list=ts.filter(t=>t.q===q).sort((a,b)=>(a.done-b.done)||((b.carried||0)-(a.carried||0))||(a.created-b.created));
+    const open=list.filter(t=>!t.done).length;
+    el.innerHTML=`<div class="qhead"><div><div class="qmeta-small">${Q[q].small}</div><h2>${Q[q].name}</h2><div class="verb">${Q[q].verb}</div></div><span class="qcount">${open} open${list.length-open?" · "+(list.length-open)+" done":""}</span></div>
+      <div class="list">${list.length?list.map(t=>card(t,today)).join(""):`<div class="empty">${Q[q].empty}</div>`}</div>
+      <form class="qadd" data-q="${q}"><input type="text" placeholder="+ Add to ${Q[q].name}" aria-label="Add to ${Q[q].name}" id="qa-${q}"></form>`;
+  });
+  if(editing){const i=$("edit-"+editing);if(i){i.focus();i.select()}}
+}
+const CHECK='<svg viewBox="0 0 12 12" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3l2.3 2.3 4.7-5"/></svg>';
+function card(t,today){
+  const chips=[];
+  if(t.jira){chips.push(t.jira.url?`<a class="chip jira" href="${esc(t.jira.url)}" target="_blank" rel="noopener">${esc(t.jira.key)}</a>`:`<span class="chip jira">${esc(t.jira.key)}</span>`);if(t.jira.status)chips.push(`<span class="chip">${esc(t.jira.status)}</span>`)}
+  if(t.carried&&!t.done)chips.push(`<span class="chip carry" title="${esc((t.trail||[]).map(short).join(" → "))}">↻ ${t.carried} day${t.carried>1?"s":""} late${t.trail&&t.trail[0]?" · since "+short(t.trail[0]):""}</span>`);
+  if(isDate(t.due)){const late=t.due<today&&!t.done;chips.push(`<span class="chip due${late?" late":""}">Due ${t.due===today?"today":short(t.due)}</span>`)}
+  if(t.delegateTo)chips.push(`<span class="chip">→ ${esc(t.delegateTo)}</span>`);
+  if(t.recurId&&state.recurring[t.recurId])chips.push(`<span class="chip">Repeats ${esc(state.recurring[t.recurId].rule)}</span>`);
+  if(t.auto&&!t.done)chips.push(`<span class="chip auto">${t.auto==="due"?"Auto: due soon":"Auto: escalated"}</span>`);
+  const title=editing===t.id?`<input class="ttl-edit" id="edit-${t.id}" value="${esc(t.title)}${t.delegateTo?" @"+esc(t.delegateTo):""}" aria-label="Rename task">`:`<span class="ttl" data-act="edit">${esc(t.title)}</span>`;
+  const acts=openActions===t.id?`<div class="actions">${ORDER.filter(q=>q!==t.q).map(q=>`<button type="button" class="mv" data-q="${q}" data-act="move">→ ${Q[q].name}</button>`).join("")}<button type="button" data-act="tomorrow">Push to tomorrow</button><button type="button" class="del" data-act="delete">Delete</button></div>`:"";
+  return `<div class="task${t.done?" done":""}" data-id="${t.id}" draggable="${editing===t.id?"false":"true"}"><div class="row"><button type="button" class="chk" data-act="done" aria-label="${t.done?"Mark not done":"Mark done"}" aria-pressed="${!!t.done}">${CHECK}</button>${title}<button type="button" class="more" data-act="more" aria-label="More actions" aria-expanded="${openActions===t.id}">⋯</button></div>${chips.length?`<div class="chips">${chips.join("")}</div>`:""}${acts}</div>`;
+}
+function renderTarget(){
+  const q=qFrom(draft.urgent,draft.important),el=$("targetLbl");
+  el.textContent="→ "+Q[q].name;el.style.setProperty("--q",`var(--q-${q==="schedule"?"sch":q==="delegate"?"del":q==="eliminate"?"elim":"do"})`);
+  $("tUrgent").setAttribute("aria-pressed",String(draft.urgent));
+  $("tImportant").setAttribute("aria-pressed",String(draft.important));
+}
+function renderLog(){
+  const L=state.log;
+  $("logCount").textContent=L.length?L.length+" entr"+(L.length>1?"ies":"y"):"nothing yet";
+  $("logList").innerHTML=L.length?L.map(e=>{const d=new Date(e.at);return `<li><time>${short(ymd(d))} ${hm(e.at)}</time><span>${esc(e.text)}</span></li>`}).join(""):'<li><time>—</time><span>Carry-overs, escalations, drops, repeats and Jira updates will be recorded here.</span></li>';
+}
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  const S=state.settings,J=state.jira;
+  const sw=(k,b,s,src)=>`<div class="set"><label for="s-${k}"><b>${b}</b><small>${s}</small></label><span class="sw"><input type="checkbox" id="s-${k}" ${src==="j"?"data-jk":"data-k"}="${k}" ${(src==="j"?J:S)[k]?"checked":""}><span></span></span></div>`;
+  const num=(k,b,s,min,max)=>`<div class="set"><label for="s-${k}"><b>${b}</b><small>${s}</small></label><input type="number" id="s-${k}" data-k="${k}" min="${min}" max="${max}" value="${S[k]}"></div>`;
+  const recs=Object.values(state.recurring);
+  const ign=Object.entries(J.ignored);
+  let conn="";
+  if(mode==="local"){
+    conn=`<div class="stack"><label for="j-site"><b>Jira site</b><small>For example yourcompany.atlassian.net</small></label><input id="j-site" type="text" value="${esc(localJira.site||"")}" placeholder="yourcompany.atlassian.net">
+      <label for="j-email"><b>Your Jira email</b></label><input id="j-email" type="text" value="${esc(localJira.email||"")}" placeholder="name@company.com">
+      <label for="j-token"><b>API token</b><small>Create one at <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" rel="noopener">id.atlassian.com → Security → API tokens</a>. It is stored only in jira-config.json next to the launcher.</small></label>
+      <input id="j-token" type="password" value="" placeholder="${localJira.hasToken?"Saved. Type a new one to replace it":"Paste your API token"}" autocomplete="off">
+      <div class="row2"><button class="btn sm primary" type="button" id="j-save">Save and sync</button><span class="jmeta" id="j-saved"></span></div></div>`;
+  }else if(inClaude()){
+    conn=`<div class="stack"><label for="j-site2"><b>Jira site</b><small>Leave blank to use the first site your Atlassian connection can reach. Uses your Atlassian connector in Claude.</small></label><input id="j-site2" type="text" data-jt="site" value="${esc(J.site)}" placeholder="yourcompany.atlassian.net"></div>`;
+  }else{
+    conn=`<div class="set"><label><small>Jira works when this page is open in Claude, or started with the local launcher (run_planner.py).</small></label></div>`;
+  }
+  $("settingsBody").innerHTML=`
+  <div class="sec"><h4>Carry-over</h4>
+   ${sw("autoCarry","Carry unfinished tasks forward","Anything not done moves to the next day automatically.")}
+   ${sw("skipWeekends","Skip weekends","Unfinished Friday work lands on Monday. Repeating tasks pause on weekends.")}
+   ${num("dayStartHour","My day starts at (hour)","Work done before this hour counts for the previous day. 0 = midnight.",0,6)}
+  </div>
+  <div class="sec"><h4>Auto-prioritise</h4>
+   ${num("escalateAfter","Escalate Schedule → Do after (days late)","Important work that keeps slipping becomes urgent. 0 = off.",0,30)}
+   ${sw("autoUrgent","Make tasks urgent near their due date","Schedule → Do and Eliminate → Delegate when the due date is close.")}
+   ${num("dueSoonDays","“Close” means within (days)","0 = only on the due date.",0,14)}
+   ${num("dropAfter","Drop Eliminate tasks after (days late)","Low-value tasks that never get done are removed. 0 = off.",0,30)}
+   <div class="set"><label><small>Moving a card yourself locks its box, so the automation never overrides your choice.</small></label></div>
+  </div>
+  <div class="sec"><h4>Jira</h4>
+   ${conn}
+   ${sw("autoAdd","Add new tickets to the matrix automatically","Skips the inbox. Each ticket goes to the box its priority and due date suggest.","j")}
+   ${sw("autoClose","Tick off tasks when the ticket is finished","When a linked ticket reaches a finished status, or is no longer assigned to you.","j")}
+   <div class="stack"><label for="j-fin"><b>Statuses that count as finished</b><small>Comma-separated. Tickets in these statuses never show in the inbox.</small></label><input id="j-fin" type="text" data-jt="finished" value="${esc(J.finished)}"></div>
+   <div class="stack"><label for="j-hide"><b>Never show these tickets</b><small>Ticket keys, or a whole project with a star, e.g. <code>OPS-12, SUPPORT-*</code></small></label><textarea id="j-hide" data-jt="hide" placeholder="OPS-12, SUPPORT-*">${esc(J.hide)}</textarea></div>
+   <div class="stack"><label for="j-jql"><b>Custom search (JQL)</b><small>Optional. Leave blank for open tickets assigned to you.</small></label><input id="j-jql" type="text" data-jt="jql" value="${esc(J.jql)}" placeholder="${esc(DEFAULT_JQL)}"></div>
+   <div class="stack"><b style="font-weight:500;font-size:13.5px">Ignored tickets (${ign.length})</b>${ign.length?ign.map(([k,v])=>`<div class="rec"><span><span class="key">${esc(k)}</span>${esc(v&&v.summary||"")}</span><button class="btn ghost sm" type="button" data-unignore="${esc(k)}">Restore</button></div>`).join(""):'<small>None. Press “Ignore” on a ticket in the inbox to hide it here.</small>'}
+   <small>${Object.keys(J.added).length} ticket(s) already added to the matrix won't appear in the inbox again.</small></div>
+  </div>
+  <div class="sec"><h4>Focus &amp; housekeeping</h4>
+   ${num("doLimit","Limit for the Do box","You'll get a warning above this many open tasks. 0 = no limit.",0,50)}
+   ${num("purgeDoneDays","Delete finished tasks after (days)","Keeps the history short. 0 = keep forever.",0,365)}
+   ${sw("defaultUrgent","New tasks start as Urgent","Default for the capture bar.")}
+   ${sw("defaultImportant","New tasks start as Important","Default for the capture bar.")}
+  </div>
+  <div class="sec"><h4>Repeating tasks</h4>
+   ${recs.length?recs.map(r=>`<div class="rec"><span>${esc(r.title)} <small>${esc(r.rule)}${r.rule==="weekly"?" · "+WD[r.dow]:""} · ${Q[r.q]?Q[r.q].name:""}</small></span><button class="btn ghost sm" type="button" data-stop="${esc(r.id)}">Stop</button></div>`).join(""):'<div class="set"><label><small>None yet. Pick “Repeat” when adding a task.</small></label></div>'}
+  </div>
+  <div class="sec"><h4>Data</h4>
+   <div class="danger" id="dangerZone">
+    <button class="btn" type="button" id="loadSample">Add example tasks</button>
+    <button class="btn" type="button" id="runNow">Run automation now</button>
+    <button class="btn" type="button" id="wipeAsk" style="color:var(--q-do)">Clear everything…</button>
+   </div>
+  </div>`;
+}
+function openDrawer(){renderSettings();$("drawer").hidden=false;$("scrim").hidden=false;$("closeDrawer").focus()}
+function closeDrawer(){$("drawer").hidden=true;$("scrim").hidden=true}
+
+function loadSample(){
+  const d=view,mk=(title,q,extra)=>{const id=uid();state.tasks[id]={id,title:"[Example] "+title,q,date:d,done:false,created:Date.now(),carried:0,recurId:null,...extra}};
+  mk("Fix eligibility calc bug blocking disbursals","do",{due:d});
+  mk("Reply to credit ops on the RCA","do",{carried:1,trail:[addDays(d,-1)]});
+  mk("Draft BRD for the new co-lender flow","schedule",{carried:1,trail:[addDays(d,-1)]});
+  mk("Block 2 hours to map loan status transitions","schedule",{});
+  mk("Collect sample loan files","delegate",{delegateTo:"Ravi"});
+  mk("Reorganise old Confluence pages","eliminate",{carried:2,trail:[addDays(d,-2),addDays(d,-1)]});
+  save();render();toast("Added 6 example tasks. Delete them any time.");
+}
+
+/* ---------- toast ---------- */
+let toastT=null;
+function toast(msg,undo){
+  const el=$("toast");
+  el.innerHTML=`<span>${esc(msg)}</span>`+(undo?'<button type="button">Undo</button>':"");
+  el.hidden=false;clearTimeout(toastT);
+  if(undo)el.querySelector("button").onclick=()=>{undo();el.hidden=true};
+  toastT=setTimeout(()=>{el.hidden=true},undo?6000:3000);
+}
+
+/* ---------- events ---------- */
+function guard(fn){return function(e){try{return fn.call(this,e)}catch(err){console.error(err);toast("Something went wrong: "+(err&&err.message||err))}}}
+function bind(){
+  $("days").addEventListener("click",guard(e=>{const b=e.target.closest(".d");if(!b)return;view=b.dataset.day;openActions=null;render()}));
+  $("prevWk").onclick=guard(()=>{weekAnchor=addDays(weekAnchor,-7);view=weekAnchor;render()});
+  $("nextWk").onclick=guard(()=>{weekAnchor=addDays(weekAnchor,7);view=weekAnchor;render()});
+  $("todayBtn").onclick=guard(()=>{view=weekAnchor=logicalToday();render()});
+  $("tUrgent").onclick=guard(()=>{draft.urgent=!draft.urgent;renderTarget()});
+  $("tImportant").onclick=guard(()=>{draft.important=!draft.important;renderTarget()});
+  $("capture").addEventListener("submit",guard(e=>{
+    e.preventDefault();const t=$("newTitle");if(!t.value.trim()){t.focus();return}
+    const q=qFrom(draft.urgent,draft.important);
+    if(addTask(t.value,q,{due:$("newDue").value,repeat:$("newRepeat").value})){
+      t.value="";$("newDue").value="";$("newRepeat").value="";t.focus();toast("Added to "+Q[q].name);
+    }
+  }));
+  $("newTitle").addEventListener("keydown",e=>{
+    if(e.altKey&&(e.key==="u"||e.key==="U")){e.preventDefault();draft.urgent=!draft.urgent;renderTarget()}
+    if(e.altKey&&(e.key==="i"||e.key==="I")){e.preventDefault();draft.important=!draft.important;renderTarget()}
+  });
+  const M=$("matrix");
+  M.addEventListener("submit",guard(e=>{const f=e.target.closest(".qadd");if(!f)return;e.preventDefault();const i=f.querySelector("input");const q=f.dataset.q;const v=i.value;if(!v.trim())return;addTask(v,q);const n=$("qa-"+q);if(n)n.focus()}));
+  M.addEventListener("click",guard(e=>{
+    const a=e.target.closest("[data-act]");if(!a)return;const card=a.closest(".task");if(!card)return;const id=card.dataset.id;
+    switch(a.dataset.act){
+      case "done":toggleDone(id);break;
+      case "more":openActions=openActions===id?null:id;render();break;
+      case "move":openActions=null;setQ(id,a.dataset.q);break;
+      case "tomorrow":tomorrow(id);break;
+      case "delete":remove(id);break;
+      case "edit":editing=id;render();break;
+    }
+  }));
+  M.addEventListener("keydown",e=>{
+    if(!e.target.classList.contains("ttl-edit"))return;
+    if(e.key==="Enter"){e.preventDefault();const t=state.tasks[editing];if(t)t.renamed=true;rename(editing,e.target.value)}
+    if(e.key==="Escape"){editing=null;render()}
+  });
+  M.addEventListener("focusout",e=>{if(e.target.classList.contains("ttl-edit")&&editing){const t=state.tasks[editing];if(t&&e.target.value.trim()!==t.title)t.renamed=true;rename(editing,e.target.value)}});
+  let dragId=null;
+  M.addEventListener("dragstart",e=>{const c=e.target.closest&&e.target.closest(".task");if(!c)return;dragId=c.dataset.id;c.classList.add("dragging");try{e.dataTransfer.setData("text/plain",dragId);e.dataTransfer.effectAllowed="move"}catch(_){}});
+  M.addEventListener("dragend",e=>{const c=e.target.closest&&e.target.closest(".task");if(c)c.classList.remove("dragging");document.querySelectorAll(".quad.over").forEach(q=>q.classList.remove("over"))});
+  M.addEventListener("dragover",e=>{const q=e.target.closest(".quad");if(!q||!dragId)return;e.preventDefault();document.querySelectorAll(".quad.over").forEach(x=>x!==q&&x.classList.remove("over"));q.classList.add("over")});
+  M.addEventListener("dragleave",e=>{const q=e.target.closest(".quad");if(q&&!q.contains(e.relatedTarget))q.classList.remove("over")});
+  M.addEventListener("drop",guard(e=>{const q=e.target.closest(".quad");if(!q||!dragId)return;e.preventDefault();q.classList.remove("over");const id=dragId;dragId=null;setQ(id,q.dataset.q)}));
+
+  $("jira").addEventListener("click",guard(e=>{
+    const b=e.target.closest("[data-j]");if(!b)return;const J=state.jira;
+    const row=b.closest(".jrow"),key=row&&row.dataset.key;
+    const t=key&&J.cache.find(x=>x.key===key);
+    switch(b.dataset.j){
+      case "sync":syncJira();break;
+      case "fold":J.open=!J.open;save();renderJira();break;
+      case "add":{if(!t)return;const sel=$("jq-"+key);const q=sel&&ORDER.includes(sel.value)?sel.value:suggestQ(t);addFromJira(t,q);runAutomation();save();render();toast(key+" added to "+Q[q].name);break}
+      case "ignore":{if(!t)return;J.ignored[key]={summary:t.summary,at:Date.now()};save();render();toast("Ignored "+key,()=>{delete state.jira.ignored[key];save();render()});break}
+      case "addall":{const all=inbox();all.forEach(x=>{const sel=$("jq-"+x.key);addFromJira(x,sel&&ORDER.includes(sel.value)?sel.value:suggestQ(x))});runAutomation();save();render();toast("Added "+all.length+" tickets");break}
+    }
+  }));
+
+  $("bannerSlot").addEventListener("click",guard(e=>{
+    if(e.target.id!=="pullLate")return;const today=logicalToday();let n=0;
+    openTasks().filter(t=>t.date<today).forEach(t=>{(t.trail=t.trail||[]).push(t.date);t.date=today;t.carried=(t.carried||0)+1;n++});
+    log("You brought "+n+" unfinished task"+(n>1?"s":"")+" to today");save();render();
+  }));
+  $("settingsBtn").onclick=guard(openDrawer);$("closeDrawer").onclick=closeDrawer;$("scrim").onclick=closeDrawer;
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("drawer").hidden)closeDrawer()});
+  const body=$("settingsBody");
+  body.addEventListener("change",guard(e=>{
+    const el=e.target;
+    if(el.dataset.k){
+      const k=el.dataset.k;
+      const v=el.type==="checkbox"?el.checked:Math.max(+el.min||0,Math.min(+el.max||999,parseInt(el.value,10)||0));
+      state.settings[k]=v;if(el.type==="number")el.value=v;
+      if(k==="defaultUrgent"){draft.urgent=v}if(k==="defaultImportant"){draft.important=v}
+      runAutomation();save();render();return;
+    }
+    if(el.dataset.jk){state.jira[el.dataset.jk]=el.checked;if(el.dataset.jk==="autoAdd"&&el.checked&&state.jira.cache.length)applyJira(state.jira.cache,false);save();render();return}
+    if(el.dataset.jt){const k=el.dataset.jt;state.jira[k]=el.value.trim();save();render();if(k==="site"||k==="jql"){state.jira.cache=[];syncJira()}return}
+  }));
+  body.addEventListener("click",guard(async e=>{
+    const t=e.target;
+    if(t.dataset.stop){const r=state.recurring[t.dataset.stop];if(!r)return;delete state.recurring[t.dataset.stop];Object.values(state.tasks).forEach(x=>{if(x.recurId===r.id)x.recurId=null});save();renderSettings();render();toast("Stopped repeating “"+r.title+"”");}
+    if(t.dataset.unignore){delete state.jira.ignored[t.dataset.unignore];save();renderSettings();render();toast("Restored "+t.dataset.unignore)}
+    if(t.id==="j-save"){
+      const payload={site:$("j-site").value.trim(),email:$("j-email").value.trim(),token:$("j-token").value.trim()};
+      $("j-saved").textContent="Saving…";
+      try{const r=await fetch("/api/jira/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});localJira=await r.json();$("j-saved").textContent=r.ok?"Saved":"Couldn't save";}catch(err){$("j-saved").textContent="Couldn't reach the launcher"}
+      $("j-token").value="";$("j-token").placeholder=localJira.hasToken?"Saved. Type a new one to replace it":"Paste your API token";
+      state.jira.cache=[];syncJira();
+    }
+    if(t.id==="loadSample"){loadSample();closeDrawer()}
+    if(t.id==="runNow"){const c=runAutomation();save();render();toast(c?"Automation applied. See the log below the matrix.":"Everything is already up to date.")}
+    if(t.id==="wipeAsk"){$("dangerZone").innerHTML='<div class="confirm-row">Delete every task, repeat and setting? <button class="btn" type="button" id="wipeYes" style="color:var(--q-do)">Yes, clear all</button><button class="btn ghost" type="button" id="wipeNo">Cancel</button></div>'}
+    if(t.id==="wipeNo")renderSettings();
+    if(t.id==="wipeYes"){state=blank();runAutomation();save();renderSettings();render();toast("Cleared")}
+  }));
+  // Day rollover, periodic Jira sync
+  const tick=()=>{
+    const t=logicalToday();
+    if(t!==lastToday){if(view===lastToday)view=weekAnchor=t;lastToday=t}
+    if(runAutomation())save();
+    if(jira.live&&!jira.busy&&Date.now()-(state.jira.lastSync||0)>15*60e3)syncJira();
+    render();
+  };
+  setInterval(()=>{if(document.visibilityState==="visible")tick()},60000);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")tick()});
+}
+
+/* ---------- boot ---------- */
+const local=loadLocal();if(local)state=local;
+draft={urgent:!!state.settings.defaultUrgent,important:!!state.settings.defaultImportant};
+lastToday=logicalToday();view=weekAnchor=lastToday;
+if(runAutomation())save();
+bind();render();
+(async()=>{
+  if(await detectLocal()){
+    if(runAutomation())save();
+    render();
+    if(localJira.hasToken&&localJira.site){jira.live=true;syncJira()}
+  }else{
+    await connectClaude();
+    render();
+    initClaudeJira();
+  }
+})();
+})();
+</script>
